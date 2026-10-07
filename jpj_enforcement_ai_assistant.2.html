@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="ms" class="dark h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>JPJ Enforcement AI Assistant V1 - Responsive System</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            jpj: {
+              navy: '#0f172a',
+              blue: '#1e3a8a',
+              accent: '#3b82f6',
+              gold: '#f59e0b',
+              goldHover: '#d97706',
+              card: '#1e293b',
+              darkBg: '#0b0f19',
+              border: '#334155'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'Segoe UI', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .jpj-gradient-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 60%, #0b0f19 100%);
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3b82f6;
+    }
+
+    .source-chip {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+      transition: all 0.2s ease;
+    }
+    .source-chip:hover {
+      background: rgba(59, 130, 246, 0.3);
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .confidence-high { background-color: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #34d399; }
+    .confidence-med  { background-color: rgba(245, 158, 11, 0.15); border-color: #f59e0b; color: #fbbf24; }
+    .confidence-low  { background-color: rgba(239, 68, 68, 0.15); border-color: #ef4444; color: #f87171; }
+
+    /* Touch screen optimization */
+    @media (max-width: 768px) {
+      .touch-btn {
+        min-height: 44px;
+      }
+    }
+
+    @media print {
+      body { background: white !important; color: black !important; }
+      #sidebar, #right-panel, #disclaimer-banner, header, #mobile-bottom-nav, .no-print { display: none !important; }
+      main { padding: 0 !important; overflow: visible !important; }
+      .glass-panel { background: white !important; border: 1px solid #ccc !important; color: black !important; }
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden text-slate-100 selection:bg-blue-600 selection:text-white">
+
+  <!-- TOP NOTICE BANNER -->
+  <div id="disclaimer-banner" class="bg-amber-950/90 border-b border-amber-800/60 text-amber-200 px-3 md:px-4 py-1.5 text-[11px] md:text-xs flex justify-between items-center z-50 shrink-0">
+    <div class="flex items-center gap-2 overflow-hidden">
+      <span class="bg-amber-500 text-slate-950 font-bold px-1.5 py-0.5 rounded text-[9px] md:text-[10px] uppercase tracking-wider shrink-0">Bantuan Rujukan</span>
+      <p class="truncate text-[11px] md:text-xs">
+        <strong>PENTING:</strong> Sistem rujukan sahaja. Tidak menggantikan Pegawai Penyiasat atau Penasihat Undang-Undang.
+      </p>
+    </div>
+    <button onclick="document.getElementById('disclaimer-banner').remove()" class="text-amber-400 hover:text-white ml-2 p-1 text-xs shrink-0">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <!-- MAIN WRAPPER -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- MOBILE BACKDROP OVERLAY -->
+    <div id="mobile-overlay" onclick="closeMobileSidebar()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-30 hidden md:hidden transition-opacity"></div>
+
+    <!-- SIDEBAR (Mobile Slide-out & Desktop Responsive) -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between transition-transform duration-300 ease-in-out z-40 shrink-0 -translate-x-full md:translate-x-0">
+      
+      <!-- Brand Identity Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-3 sidebar-text">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-700 to-slate-900 border border-blue-500/30 flex items-center justify-center text-yellow-400 font-extrabold text-lg shadow-md shrink-0">
+            JPJ
+          </div>
+          <div>
+            <div class="font-black text-sm tracking-wide text-white leading-tight">JPJ ENFORCEMENT</div>
+            <div class="text-[10px] font-semibold text-blue-400 tracking-wider">AI ASSISTANT V1</div>
+          </div>
+        </div>
+        <button onclick="closeMobileSidebar()" class="md:hidden text-slate-400 hover:text-white p-2 rounded hover:bg-slate-800 transition">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+        <button onclick="toggleDesktopSidebar()" class="hidden md:block text-slate-400 hover:text-white p-1.5 rounded hover:bg-slate-800 transition">
+          <i class="fa-solid fa-bars-staggered"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="flex-1 overflow-y-auto py-3 px-2 space-y-1 custom-scrollbar">
+        
+        <div class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 sidebar-text">Utama</div>
+
+        <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-xs font-medium bg-slate-800 text-white transition touch-btn">
+          <i class="fa-solid fa-chart-line w-4 text-center text-blue-400 text-sm md:text-xs"></i>
+          <span class="sidebar-text truncate">Dashboard</span>
+        </button>
+
+        <button onclick="switchView('assistant')" id="nav-assistant" class="nav-item w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition touch-btn">
+          <i class="fa-solid fa-robot w-4 text-center text-emerald-400 text-sm md:text-xs"></i>
+          <span class="sidebar-text truncate">AI Assistant</span>
+          <span class="ml-auto text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-mono sidebar-text">PRO</span>
+        </button>
+
+        <div class="px-3 py-1 mt-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 sidebar-text">Penguatkuasaan</div>
+
+        <button onclick="switchView('akta')" id="nav-akta" class="nav-item w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition touch-btn">
+          <i class="fa-solid fa-book-bookmark w-4 text-center text-amber-400 text-sm md:text-xs"></i>
+          <span class="sidebar-text truncate">Semak Akta 333 & 715</span>
+        </button>
+
+        <button onclick="switchView('analisis')" id="nav-analisis" class="nav-item w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition touch-btn">
+          <i class="fa-solid fa-magnifying-glass-chart w-4 text-center text-purple-400 text-sm md:text-xs"></i>
+          <span class="sidebar-text truncate">Analisis Kes</span>
+        </button>
+
+        <button onclick="switchView('checklist')" id="nav-checklist" class="nav-item w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition touch-btn">
+          <i class="fa-solid fa-list-check w-4 text-center text-cyan-400 text-sm md:text-xs"></i>
+          <span class="sidebar-text truncate">Checklist Siasatan</span>
+        </button>
+
+        <button onclick="switchView('dokumen')" id="nav-dokumen" class="nav-item w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition touch-btn">
+          <i class="fa-solid fa-file-contract w-4 text-center text-rose-400 text-sm md:text-xs"></i>
+          <span class="sidebar-text truncate">Semak Dokumen</span>
+        </button>
+
+        <div class="px-3 py-1 mt-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 sidebar-text">Pangkalan Data</div>
+
+        <button onclick="switchView('kb')" id="nav-kb" class="nav-item w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition touch-btn">
+          <i class="fa-solid fa-database w-4 text-center text-indigo-400 text-sm md:text-xs"></i>
+          <span class="sidebar-text truncate">Knowledge Base</span>
+        </button>
+
+        <button onclick="switchView('history')" id="nav-history" class="nav-item w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition touch-btn">
+          <i class="fa-solid fa-clock-rotate-left w-4 text-center text-slate-400 text-sm md:text-xs"></i>
+          <span class="sidebar-text truncate">Rekod Sejarah</span>
+        </button>
+
+        <button onclick="switchView('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition touch-btn">
+          <i class="fa-solid fa-sliders w-4 text-center text-slate-400 text-sm md:text-xs"></i>
+          <span class="sidebar-text truncate">Tetapan System</span>
+        </button>
+      </div>
+
+      <!-- Knowledge Base Status Card -->
+      <div class="p-3 border-t border-slate-800 bg-slate-950/60 sidebar-text">
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-[11px] space-y-2">
+          <div class="flex items-center justify-between text-slate-300">
+            <span class="font-semibold text-slate-200"><i class="fa-solid fa-shield-halved text-blue-400 mr-1"></i> KB Status</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          </div>
+          <div class="text-[10px] text-slate-400 space-y-1 font-mono">
+            <div class="flex justify-between"><span>Akta 333 (APJ):</span> <span class="text-emerald-400">Terbaru (196 ms)</span></div>
+            <div class="flex justify-between"><span>Akta 715 (APAD):</span> <span class="text-emerald-400">Kemaskini</span></div>
+            <div class="flex justify-between"><span>SOP / Arahan:</span> <span class="text-amber-400">v2.4 (2026)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile Minimal -->
+      <div class="p-3 border-t border-slate-800 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white shrink-0">
+          PG
+        </div>
+        <div class="sidebar-text overflow-hidden">
+          <div class="font-bold text-xs text-slate-200 truncate">Pegawai Penguatkuasa</div>
+          <div class="text-[10px] text-slate-400 truncate">Cawangan Operasi JPJ</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTENT AREA -->
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-950 relative">
+      
+      <header class="h-14 md:h-16 border-b border-slate-800 bg-slate-900/90 backdrop-filter backdrop-blur-md px-3 md:px-6 flex items-center justify-between gap-3 shrink-0 z-20">
+        
+        <!-- Mobile Drawer Toggle & Title -->
+        <div class="flex items-center gap-2.5 min-w-0">
+          <button onclick="openMobileSidebar()" class="md:hidden text-slate-300 hover:text-white p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition">
+            <i class="fa-solid fa-bars text-base"></i>
+          </button>
+
+          <h1 class="text-xs sm:text-sm md:text-base font-bold text-white tracking-wide truncate flex items-center gap-2">
+            <span class="truncate">JPJ ENFORCEMENT AI</span>
+            <span class="hidden sm:inline-block bg-blue-900/60 text-blue-300 border border-blue-700/50 text-[10px] px-1.5 py-0.5 rounded font-mono">v1.0</span>
+          </h1>
+          
+          <div class="hidden sm:flex items-center gap-1.5 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded-full shrink-0">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-[10px] font-semibold text-emerald-300 font-mono">AI Ready</span>
+          </div>
+        </div>
+
+        <!-- Global Search Bar (Desktop/Tablet) -->
+        <div class="flex-1 max-w-md hidden md:block">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+            <input type="text" id="global-search" onkeydown="handleGlobalSearch(event)" placeholder="Taip soalan, seksyen, SOP atau fakta kes..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+          </div>
+        </div>
+
+        <!-- Right Header Actions -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="toggleRightPanel()" title="Lihat Sumber & Citation Drawer" class="p-2 md:px-3 md:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-book-open text-amber-400"></i>
+            <span class="hidden md:inline text-[11px] font-medium">Source Inspector</span>
+          </button>
+
+          <button onclick="switchView('settings')" title="Tetapan System" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-xs">
+            <i class="fa-solid fa-gear"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW PANELS CONTAINER -->
+      <main class="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 custom-scrollbar pb-20 md:pb-6 relative">
+        
+        <!-- VIEW: DASHBOARD -->
+        <div id="view-dashboard" class="view-panel space-y-4 md:space-y-6">
+          
+          <!-- Welcome Banner -->
+          <div class="jpj-gradient-header rounded-xl md:rounded-2xl p-4 md:p-6 border border-slate-800 relative overflow-hidden shadow-xl">
+            <div class="relative z-10 max-w-2xl">
+              <div class="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 px-2.5 py-1 rounded-full text-yellow-400 text-[11px] font-semibold mb-2 md:mb-3">
+                <i class="fa-solid fa-shield-halved"></i> Sistem Rujukan & Siasatan Penguatkuasaan
+              </div>
+              <h2 class="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight mb-2">
+                Selamat Datang, Pegawai Penguatkuasa
+              </h2>
+              <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Platform pintar rujukan rasmi Akta Pengangkutan Jalan 1987 (Akta 333), Akta APAD 2010 (Akta 715), Kaedah Kenderaan Motor dan SOP JPJ.
+              </p>
+            </div>
+          </div>
+
+          <!-- 4 KPI CARDS -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            
+            <div class="glass-panel p-3.5 md:p-4 rounded-xl border-l-4 border-l-blue-500 flex items-center justify-between">
+              <div>
+                <div class="text-[10px] md:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Knowledge Base</div>
+                <div class="text-xl md:text-2xl font-black text-white mt-0.5 md:mt-1">196 Ms</div>
+                <div class="text-[9px] md:text-[10px] text-emerald-400 mt-0.5"><i class="fa-solid fa-circle-check"></i> Akta 333 Penuh</div>
+              </div>
+              <div class="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center text-base md:text-lg">
+                <i class="fa-solid fa-file-lines"></i>
+              </div>
+            </div>
+
+            <div class="glass-panel p-3.5 md:p-4 rounded-xl border-l-4 border-l-amber-500 flex items-center justify-between">
+              <div>
+                <div class="text-[10px] md:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Akta Utama</div>
+                <div class="text-xl md:text-2xl font-black text-white mt-0.5 md:mt-1">Akta 333 & 715</div>
+                <div class="text-[9px] md:text-[10px] text-amber-400 mt-0.5"><i class="fa-solid fa-scale-balanced"></i> Warta AGC 2026</div>
+              </div>
+              <div class="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-base md:text-lg">
+                <i class="fa-solid fa-gavel"></i>
+              </div>
+            </div>
+
+            <div class="glass-panel p-3.5 md:p-4 rounded-xl border-l-4 border-l-cyan-500 flex items-center justify-between">
+              <div>
+                <div class="text-[10px] md:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Checklist Modul</div>
+                <div class="text-xl md:text-2xl font-black text-white mt-0.5 md:mt-1">Modul A – J</div>
+                <div class="text-[9px] md:text-[10px] text-cyan-400 mt-0.5"><i class="fa-solid fa-list-check"></i> Standard JPJ</div>
+              </div>
+              <div class="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-base md:text-lg">
+                <i class="fa-solid fa-clipboard-check"></i>
+              </div>
+            </div>
+
+            <div class="glass-panel p-3.5 md:p-4 rounded-xl border-l-4 border-l-purple-500 flex items-center justify-between">
+              <div>
+                <div class="text-[10px] md:text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Engine AI</div>
+                <div class="text-xl md:text-2xl font-black text-white mt-0.5 md:mt-1">Gemini Flash</div>
+                <div class="text-[9px] md:text-[10px] text-purple-400 mt-0.5"><i class="fa-solid fa-bolt"></i> Source-First</div>
+              </div>
+              <div class="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center text-base md:text-lg">
+                <i class="fa-solid fa-microchip"></i>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- QUICK ACTIONS -->
+          <div>
+            <h3 class="text-xs md:text-sm font-bold text-slate-300 uppercase tracking-wider mb-2.5 md:mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-bolt text-yellow-400"></i> Quick Actions / Tindakan Pantas
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              
+              <button onclick="switchView('assistant')" class="glass-panel p-4 md:p-5 rounded-xl hover:border-blue-500 hover:bg-slate-800/80 transition text-left group touch-btn flex items-center gap-4 sm:block">
+                <div class="w-10 h-10 rounded-lg bg-blue-600/20 text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition flex items-center justify-center text-lg sm:mb-3 shrink-0">
+                  <i class="fa-solid fa-comments"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-sm text-white group-hover:text-blue-400 transition">Tanya AI Assistant</div>
+                  <div class="text-xs text-slate-400 mt-0.5">Soalan undang-undang & SOP penguatkuasaan</div>
+                </div>
+              </button>
+
+              <button onclick="switchView('akta')" class="glass-panel p-4 md:p-5 rounded-xl hover:border-amber-500 hover:bg-slate-800/80 transition text-left group touch-btn flex items-center gap-4 sm:block">
+                <div class="w-10 h-10 rounded-lg bg-amber-600/20 text-amber-400 group-hover:bg-amber-600 group-hover:text-white transition flex items-center justify-center text-lg sm:mb-3 shrink-0">
+                  <i class="fa-solid fa-book-bookmark"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-sm text-white group-hover:text-amber-400 transition">Semak Seksyen Akta 333</div>
+                  <div class="text-xs text-slate-400 mt-0.5">Semak peruntukan, elemen & hukuman</div>
+                </div>
+              </button>
+
+              <button onclick="switchView('analisis')" class="glass-panel p-4 md:p-5 rounded-xl hover:border-purple-500 hover:bg-slate-800/80 transition text-left group touch-btn flex items-center gap-4 sm:block">
+                <div class="w-10 h-10 rounded-lg bg-purple-600/20 text-purple-400 group-hover:bg-purple-600 group-hover:text-white transition flex items-center justify-center text-lg sm:mb-3 shrink-0">
+                  <i class="fa-solid fa-magnifying-glass-chart"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-sm text-white group-hover:text-purple-400 transition">Analisis Fakta Kes</div>
+                  <div class="text-xs text-slate-400 mt-0.5">Analisis fakta kes & status undang-undang</div>
+                </div>
+              </button>
+
+              <button onclick="switchView('checklist')" class="glass-panel p-4 md:p-5 rounded-xl hover:border-cyan-500 hover:bg-slate-800/80 transition text-left group touch-btn flex items-center gap-4 sm:block">
+                <div class="w-10 h-10 rounded-lg bg-cyan-600/20 text-cyan-400 group-hover:bg-cyan-600 group-hover:text-white transition flex items-center justify-center text-lg sm:mb-3 shrink-0">
+                  <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-sm text-white group-hover:text-cyan-400 transition">Checklist Siasatan</div>
+                  <div class="text-xs text-slate-400 mt-0.5">Bina checklist siasatan berstruktur (A-J)</div>
+                </div>
+              </button>
+
+              <button onclick="switchView('dokumen')" class="glass-panel p-4 md:p-5 rounded-xl hover:border-rose-500 hover:bg-slate-800/80 transition text-left group touch-btn flex items-center gap-4 sm:block">
+                <div class="w-10 h-10 rounded-lg bg-rose-600/20 text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition flex items-center justify-center text-lg sm:mb-3 shrink-0">
+                  <i class="fa-solid fa-file-contract"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-sm text-white group-hover:text-rose-400 transition">Semakan Dokumen</div>
+                  <div class="text-xs text-slate-400 mt-0.5">Semak keselarasan notis Pol 257 / Sek. 61</div>
+                </div>
+              </button>
+
+              <button onclick="switchView('kb')" class="glass-panel p-4 md:p-5 rounded-xl hover:border-indigo-500 hover:bg-slate-800/80 transition text-left group touch-btn flex items-center gap-4 sm:block">
+                <div class="w-10 h-10 rounded-lg bg-indigo-600/20 text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition flex items-center justify-center text-lg sm:mb-3 shrink-0">
+                  <i class="fa-solid fa-database"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-sm text-white group-hover:text-indigo-400 transition">Knowledge Base</div>
+                  <div class="text-xs text-slate-400 mt-0.5">Cari sumber warta & pekeliling rasmi</div>
+                </div>
+              </button>
+
+            </div>
+          </div>
+
+          <!-- RECENT ACTIVITY TABLE -->
+          <div class="glass-panel p-4 md:p-5 rounded-xl border border-slate-800 overflow-hidden">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-xs md:text-sm font-bold text-slate-200">Peruntukan Rujukan Utama Akta 333</h3>
+              <button onclick="switchView('akta')" class="text-xs text-blue-400 hover:underline">Lihat Semua</button>
+            </div>
+            
+            <div class="overflow-x-auto custom-scrollbar">
+              <table class="w-full text-xs text-left text-slate-300 min-w-[550px]">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-mono border-b border-slate-800">
+                  <tr>
+                    <th class="p-2.5 md:p-3">Seksyen</th>
+                    <th class="p-2.5 md:p-3">Tajuk Peruntukan</th>
+                    <th class="p-2.5 md:p-3">Kategori</th>
+                    <th class="p-2.5 md:p-3 text-right">Tindakan</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 font-mono text-[11px]">
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="p-2.5 md:p-3 text-amber-400 font-bold">Seksyen 41(1)</td>
+                    <td class="p-2.5 md:p-3 font-semibold text-white">Menyebabkan Kematian Kerana Memandu Secara Melulu</td>
+                    <td class="p-2.5 md:p-3"><span class="source-chip px-2 py-0.5 rounded">Kesalahan Berat</span></td>
+                    <td class="p-2.5 md:p-3 text-right"><button onclick="quickAsk('Terangkan Seksyen 41(1) Akta 333 dan hukuman terkini.')" class="text-blue-400 hover:underline">Semak AI</button></td>
+                  </tr>
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="p-2.5 md:p-3 text-amber-400 font-bold">Seksyen 45A(1)</td>
+                    <td class="p-2.5 md:p-3 font-semibold text-white">Memandu Dengan Kepekatan Alkohol Melebihi Had</td>
+                    <td class="p-2.5 md:p-3"><span class="source-chip px-2 py-0.5 rounded">Alkohol / Trafik</span></td>
+                    <td class="p-2.5 md:p-3 text-right"><button onclick="quickAsk('Apakah had kepekatan alkohol di bawah Seksyen 45A APJ 1987?')" class="text-blue-400 hover:underline">Semak AI</button></td>
+                  </tr>
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="p-2.5 md:p-3 text-amber-400 font-bold">Seksyen 26(1)</td>
+                    <td class="p-2.5 md:p-3 font-semibold text-white">Memandu Tanpa Lesen Memandu Sah</td>
+                    <td class="p-2.5 md:p-3"><span class="source-chip px-2 py-0.5 rounded">Lesen / Pemandu</span></td>
+                    <td class="p-2.5 md:p-3 text-right"><button onclick="quickAsk('Apakah elemen yang perlu disemak bagi Seksyen 26(1)?')" class="text-blue-400 hover:underline">Semak AI</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- VIEW: AI ASSISTANT CHAT -->
+        <div id="view-assistant" class="view-panel hidden h-full flex flex-col">
+          
+          <!-- Assistant Header Bar -->
+          <div class="glass-panel p-3 md:p-4 rounded-xl mb-3 flex items-center justify-between shrink-0">
+            <div>
+              <h2 class="text-xs md:text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-robot text-emerald-400"></i> JPJ Enforcement AI Assistant V1
+              </h2>
+              <p class="text-[10px] md:text-[11px] text-slate-400">Enjin rujukan undang-undang: Sumber Dahulu, Jawapan Kemudian.</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="clearChat()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition touch-btn">
+                <i class="fa-solid fa-rotate mr-1"></i> Sesi Baru
+              </button>
+            </div>
+          </div>
+
+          <!-- Suggested Prompt Chips -->
+          <div class="flex gap-2 overflow-x-auto pb-2 mb-2 shrink-0 custom-scrollbar text-xs">
+            <button onclick="quickAsk('Terangkan Seksyen 42(1) Akta Pengangkutan Jalan 1987 memandu secara melulu.')" class="bg-slate-800/80 hover:bg-blue-900/50 border border-slate-700 hover:border-blue-500 text-slate-200 px-3 py-1.5 rounded-full shrink-0 transition whitespace-nowrap">
+              <i class="fa-solid fa-scale-balanced text-yellow-400 mr-1"></i> Seksyen 42(1) APJ Memandu Melulu
+            </button>
+            <button onclick="quickAsk('Apakah elemen dan hukuman kesalahan Seksyen 26(1) tiada lesen memandu?')" class="bg-slate-800/80 hover:bg-blue-900/50 border border-slate-700 hover:border-blue-500 text-slate-200 px-3 py-1.5 rounded-full shrink-0 transition whitespace-nowrap">
+              <i class="fa-solid fa-id-card text-blue-400 mr-1"></i> Lesen Memandu S.26
+            </button>
+            <button onclick="quickAsk('Bina checklist siasatan bagi kesalahan lori membawa muatan berlebihan (Overloading) APAD.')" class="bg-slate-800/80 hover:bg-blue-900/50 border border-slate-700 hover:border-blue-500 text-slate-200 px-3 py-1.5 rounded-full shrink-0 transition whitespace-nowrap">
+              <i class="fa-solid fa-truck-weight text-purple-400 mr-1"></i> Overloading APAD
+            </button>
+            <button onclick="quickAsk('Apakah kuasa pegawai di bawah Seksyen 64(1) untuk menyita kenderaan?')" class="bg-slate-800/80 hover:bg-blue-900/50 border border-slate-700 hover:border-blue-500 text-slate-200 px-3 py-1.5 rounded-full shrink-0 transition whitespace-nowrap">
+              <i class="fa-solid fa-handcuffs text-emerald-400 mr-1"></i> Sita Kenderaan S.64
+            </button>
+          </div>
+
+          <!-- Chat Scroll Container -->
+          <div id="chat-messages" class="flex-1 overflow-y-auto space-y-4 p-1 custom-scrollbar">
+            
+            <!-- Welcome System Message -->
+            <div class="flex gap-2.5 md:gap-3">
+              <div class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-700 flex items-center justify-center text-yellow-400 font-black text-xs shrink-0 mt-1">
+                JPJ
+              </div>
+              <div class="flex-1 bg-slate-900 border border-slate-800 p-3.5 md:p-4 rounded-2xl rounded-tl-none max-w-3xl space-y-2 text-xs">
+                <div class="font-bold text-blue-400">JPJ Enforcement AI Assistant V1</div>
+                <p class="text-slate-200 leading-relaxed">
+                  Salam tugas. Saya ialah Pembantu Rujukan AI Penguatkuasaan JPJ. Saya bersedia membantu anda menyemak peruntukan <strong>Akta 333 (APJ 1987)</strong>, <strong>Akta 715 (APAD 2010)</strong>, elemen kesalahan, cadangan bukti, dan checklist siasatan.
+                </p>
+                <div class="bg-slate-950 p-2.5 rounded border border-slate-800 text-[11px] text-slate-400 font-mono">
+                  💡 Sila taip soalan atau pilih contoh prompt di atas untuk bermula.
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Chat Input Form -->
+          <form id="chat-form" onsubmit="handleChatSubmit(event)" class="mt-3 shrink-0 flex gap-2">
+            <input type="text" id="chat-input" placeholder="Taip soalan undang-undang atau fakta kes..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 md:px-4 py-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition touch-btn">
+            <button type="submit" id="btn-send-chat" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 md:px-5 py-3 rounded-xl transition flex items-center gap-2 text-xs shrink-0 shadow-lg shadow-blue-900/30 touch-btn">
+              <span>Hantar</span> <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </form>
+
+        </div>
+
+        <!-- VIEW: AKTA EXPLORER -->
+        <div id="view-akta" class="view-panel hidden space-y-4 md:space-y-5">
+          
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-800 pb-3 md:pb-4">
+            <div>
+              <h2 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-book-bookmark text-amber-400"></i> Semakan Peruntukan Akta 333 & Akta 715
+              </h2>
+              <p class="text-xs text-slate-400">Direktori komprehensif Akta Pengangkutan Jalan 1987 & Akta APAD 2010.</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+              <input type="text" id="act-filter-input" onkeyup="filterActs()" placeholder="Cari seksyen atau tajuk..." class="w-full sm:w-auto bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+              <select id="act-category-select" onchange="filterActs()" class="w-full sm:w-auto bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200">
+                <option value="ALL">Semua Peruntukan</option>
+                <option value="AKTA333">Akta 333 (APJ 1987)</option>
+                <option value="AKTA715">Akta 715 (APAD 2010)</option>
+                <option value="KAEDAH">Kaedah & Peraturan</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Act Section Cards Grid -->
+          <div id="act-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+            <!-- Dynamically populated -->
+          </div>
+
+        </div>
+
+        <!-- VIEW: ANALISIS KES -->
+        <div id="view-analisis" class="view-panel hidden space-y-4 md:space-y-5">
+          
+          <div class="border-b border-slate-800 pb-3 md:pb-4">
+            <h2 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-magnifying-glass-chart text-purple-400"></i> Modul Analisis Fakta Kes
+            </h2>
+            <p class="text-xs text-slate-400">Semak fakta kes hipotetikal tanpa membuat keputusan bersalah automatik.</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
+            
+            <!-- Left Input Form -->
+            <div class="lg:col-span-5 glass-panel p-4 md:p-5 rounded-xl border border-slate-800 space-y-3.5">
+              <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Maklumat Input Kes</h3>
+              
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">No. Rujukan Kes (Hipotetikal)</label>
+                <input type="text" id="case-ref" value="KES/HIPO/2026/0109" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono">
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-400 mb-1">Jenis Kenderaan</label>
+                  <select id="case-v-type" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-200">
+                    <option value="Lori Barangan">Lori Barangan / Rigid</option>
+                    <option value="Motosikal">Motosikal</option>
+                    <option value="Kereta Persendirian">Kereta Persendirian</option>
+                    <option value="Bas Ekspres/Persiaran">Bas Perkhidmatan Awam</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-400 mb-1">Status Lesen Pemandu</label>
+                  <select id="case-d-status" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-200">
+                    <option value="Tiada Lesen Memandu">Tiada Lesen (S.26)</option>
+                    <option value="Lesen CDL Sah">Lesen Sah (CDL)</option>
+                    <option value="Lesen Tamat Tempoh">Lesen Tamat Tempoh</option>
+                    <option value="Lesen GDL/PSV Tamat">GDL/PSV Tamat Tempoh</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Fakta Kes (Raw Facts)</label>
+                <textarea id="case-facts-input" rows="5" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 leading-relaxed font-mono focus:outline-none focus:border-purple-500" placeholder="Masukkan fakta kes di sini. Contoh: Lori BDA1234 dihentikan di kilometer 12. Pemandu gagal menunjukkan Lesen Memandu dan muatan dipercayai melebihi had..."></textarea>
+              </div>
+
+              <button onclick="runCaseAnalysis()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 md:py-2.5 rounded-lg transition text-xs flex justify-center items-center gap-2 shadow-lg shadow-purple-900/30 touch-btn">
+                <i class="fa-solid fa-microchip"></i> Jalankan Analisis Kes AI
+              </button>
+            </div>
+
+            <!-- Right Structured Output -->
+            <div class="lg:col-span-7 glass-panel p-4 md:p-5 rounded-xl border border-slate-800 space-y-4">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Hasil Analisis Fakta Kes</h3>
+                <span id="case-confidence-badge" class="confidence-high px-2 py-0.5 rounded text-[10px] font-mono font-bold border">STATUS: DRAFT</span>
+              </div>
+
+              <div id="case-analysis-output" class="space-y-4 text-xs leading-relaxed">
+                <div class="p-8 text-center text-slate-500 font-mono">
+                  Sila masukkan fakta kes di panel sebelah kiri/atas dan klik "Jalankan Analisis Kes AI".
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- VIEW: CHECKLIST SIASATAN -->
+        <div id="view-checklist" class="view-panel hidden space-y-4 md:space-y-5">
+          
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-800 pb-3 md:pb-4">
+            <div>
+              <h2 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-cyan-400"></i> Penjana Checklist Siasatan (Modul A–J)
+              </h2>
+              <p class="text-xs text-slate-400">Checklist piawaian siasatan mengikut piawaian penguatkuasaan JPJ.</p>
+            </div>
+
+            <div class="flex gap-2 w-full md:w-auto">
+              <button onclick="printChecklist()" class="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-xs transition flex justify-center items-center gap-1.5 touch-btn">
+                <i class="fa-solid fa-print"></i> Cetak / PDF
+              </button>
+              <button onclick="copyChecklistText()" class="flex-1 md:flex-none bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-2 rounded-lg text-xs transition flex justify-center items-center gap-1.5 font-semibold touch-btn">
+                <i class="fa-regular fa-copy"></i> Salin Teks
+              </button>
+            </div>
+          </div>
+
+          <!-- Checklist Container -->
+          <div id="checklist-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+            <!-- Dynamically populated -->
+          </div>
+
+        </div>
+
+        <!-- VIEW: SEMAK DOKUMEN -->
+        <div id="view-dokumen" class="view-panel hidden space-y-4 md:space-y-5">
+          
+          <div class="border-b border-slate-800 pb-3 md:pb-4">
+            <h2 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-file-contract text-rose-400"></i> Semakan Dokumen & Notis Siasatan
+            </h2>
+            <p class="text-xs text-slate-400">Pemeriksaan teks notis Pol 257, Seksyen 61(1) dan keselarasan rekod.</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            
+            <div class="glass-panel p-4 md:p-5 rounded-xl border border-slate-800 space-y-4">
+              <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Teks / Salinan Dokumen</h3>
+              
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Jenis Dokumen</label>
+                <select id="doc-type-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200">
+                  <option value="Notis Pol 257">Notis Pol 257 / Saman JPJ</option>
+                  <option value="Notis 61(1) APJ">Notis Seksyen 61(1) Arahan Timbang/Pemeriksaan</option>
+                  <option value="Lesen Kenderaan Motor">Lesen Kenderaan Motor (LKM)</option>
+                  <option value="Surat Kelulusan APAD">Surat / Lesen Pengendali APAD</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-400 mb-1">Teks Dokumen (Tampal Teks / Salinan OCR)</label>
+                <textarea id="doc-text-input" rows="8" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 font-mono leading-relaxed focus:outline-none focus:border-rose-500" placeholder="Tampal teks notis atau dokumen di sini untuk disemak keselarasan seksyen dan tarikh..."></textarea>
+              </div>
+
+              <button onclick="analyzeDocument()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-semibold py-3 md:py-2.5 rounded-lg transition text-xs flex justify-center items-center gap-2 touch-btn">
+                <i class="fa-solid fa-file-circle-check"></i> Semak Keselarasan Dokumen
+              </button>
+            </div>
+
+            <div class="glass-panel p-4 md:p-5 rounded-xl border border-slate-800 space-y-4">
+              <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Laporan Semakan Dokumen</h3>
+              <div id="doc-analysis-result" class="space-y-3 text-xs leading-relaxed">
+                <div class="p-8 text-center text-slate-500 font-mono">
+                  Sila masukkan teks dokumen di atas/sebelah dan tekan "Semak Keselarasan Dokumen".
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- VIEW: KNOWLEDGE BASE -->
+        <div id="view-kb" class="view-panel hidden space-y-4 md:space-y-5">
+          
+          <div class="border-b border-slate-800 pb-3 md:pb-4">
+            <h2 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-database text-indigo-400"></i> Pangkalan Data & Hierarki Sumber
+            </h2>
+            <p class="text-xs text-slate-400">Hierarki Rujukan Rasmi: Tahap 1 (Utama Warta AGC), Tahap 2 (Portal Rasmi), Tahap 3 (Sekunder).</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            
+            <div class="glass-panel p-4 rounded-xl border-t-4 border-t-emerald-500 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-400 uppercase">Tahap 1 — Sumber Utama</span>
+                <span class="bg-emerald-950 text-emerald-300 text-[10px] px-2 py-0.5 rounded font-mono">VERIFIED</span>
+              </div>
+              <ul class="text-xs text-slate-300 space-y-2 font-mono">
+                <li class="p-2 bg-slate-900 rounded border border-slate-800">• Akta Pengangkutan Jalan 1987 (Akta 333 - 196 ms)</li>
+                <li class="p-2 bg-slate-900 rounded border border-slate-800">• Akta Pengangkutan Awam Darat 2010 (Akta 715)</li>
+                <li class="p-2 bg-slate-900 rounded border border-slate-800">• Kaedah-Kaedah Kenderaan Motor (Pendaftaran & Lesen)</li>
+                <li class="p-2 bg-slate-900 rounded border border-slate-800">• Pekeliling Rasmi Penguatkuasaan JPJ 2026</li>
+              </ul>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl border-t-4 border-t-blue-500 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-blue-400 uppercase">Tahap 2 — Portal Rasmi</span>
+                <span class="bg-blue-950 text-blue-300 text-[10px] px-2 py-0.5 rounded font-mono">GOVT WEBSITES</span>
+              </div>
+              <ul class="text-xs text-slate-300 space-y-2 font-mono">
+                <li class="p-2 bg-slate-900 rounded border border-slate-800">• Portal Rasmi JPJ Malaysia</li>
+                <li class="p-2 bg-slate-900 rounded border border-slate-800">• Portal Rasmi Kementerian Pengangkutan (MOT)</li>
+                <li class="p-2 bg-slate-900 rounded border border-slate-800">• Warta Kerajaan AGC (Jabatan Peguam Negara)</li>
+              </ul>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl border-t-4 border-t-slate-500 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 uppercase">Tahap 3 — Sumber Sekunder</span>
+                <span class="bg-slate-900 text-slate-400 text-[10px] px-2 py-0.5 rounded font-mono">LIMITED USE</span>
+              </div>
+              <ul class="text-xs text-slate-400 space-y-2 font-mono">
+                <li class="p-2 bg-slate-900 rounded border border-slate-800">• Laporan Kes Mahkamah Rayuan/Tinggi</li>
+                <li class="p-2 bg-slate-900 rounded border border-slate-800">• Teks Penerangan Undang-Undang Pengangkutan</li>
+                <li class="p-2 bg-slate-900 rounded border border-slate-800">• *Blog / Media Sosial DILARANG sebagai sumber hukum</li>
+              </ul>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- VIEW: HISTORY -->
+        <div id="view-history" class="view-panel hidden space-y-4 md:space-y-5">
+          
+          <div class="border-b border-slate-800 pb-3 md:pb-4 flex justify-between items-center">
+            <div>
+              <h2 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-slate-400"></i> Sejarah Carian & Analisis Kes
+              </h2>
+              <p class="text-xs text-slate-400">Rekod sesi semakan dan pertanyaan yang telah dibuat.</p>
+            </div>
+            <button onclick="clearHistoryLogs()" class="text-xs bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 px-3 py-1.5 rounded-lg transition touch-btn">
+              <i class="fa-solid fa-trash mr-1"></i> Padam Rekod
+            </button>
+          </div>
+
+          <div class="glass-panel p-4 rounded-xl border border-slate-800">
+            <div id="history-list" class="space-y-3 font-mono text-xs">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- VIEW: SETTINGS -->
+        <div id="view-settings" class="view-panel hidden space-y-4 md:space-y-5 max-w-3xl">
+          
+          <div class="border-b border-slate-800 pb-3 md:pb-4">
+            <h2 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-sliders text-slate-400"></i> Tetapan Aplikasi & Integrasi AI
+            </h2>
+            <p class="text-xs text-slate-400">Konfigurasi AI Model, API Key dan tatatanda keselamatan data.</p>
+          </div>
+
+          <div class="glass-panel p-4 md:p-5 rounded-xl border border-slate-800 space-y-4">
+            
+            <h3 class="text-xs font-bold text-blue-400 uppercase tracking-wider">Konfigurasi API AI (Gemini)</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Aplikasi ini disepadukan dengan model <code>gemini-3-flash-preview</code>. API Key disediakan secara automatik secara runtime, atau anda boleh mengemukakan kekunci sendiri jika perlu.
+            </p>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Gemini API Key (Opsional)</label>
+              <input type="password" id="custom-api-key" placeholder="Masukkan API Key tersuai (jika ada)..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono">
+              <span class="text-[10px] text-slate-500">Secara lalai, perkakasan Canvas akan menguruskan pengesahan jika dibiarkan kosong.</span>
+            </div>
+
+            <hr class="border-slate-800">
+
+            <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Mod Pangkalan Data & Rules</h3>
+            
+            <div class="space-y-2 text-xs text-slate-300">
+              <label class="flex items-center gap-2">
+                <input type="checkbox" checked disabled class="accent-amber-500">
+                <span>Mod Sumber-Dahulu (Source-First Enforcement) - Malar Aktif</span>
+              </label>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" checked disabled class="accent-amber-500">
+                <span>Anti-Hallucination Guardrail (Mengelakkan nombor seksyen rekaan)</span>
+              </label>
+            </div>
+
+            <button onclick="alert('Tetapan berjaya disimpan.')" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg text-xs transition touch-btn">
+              Simpan Tetapan
+            </button>
+
+          </div>
+
+        </div>
+
+      </main>
+
+    </div>
+
+    <!-- RIGHT INSPECTOR DRAWER (Mobile Slide-Over & Desktop Sidebar) -->
+    <aside id="right-panel" class="fixed lg:static inset-y-0 right-0 w-80 bg-slate-900 border-l border-slate-800 flex flex-col justify-between transition-transform duration-300 ease-in-out z-40 shrink-0 translate-x-full lg:translate-x-0 hidden lg:flex">
+      
+      <!-- Drawer Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-book-open text-amber-400"></i>
+          <span class="font-bold text-xs text-white uppercase tracking-wider">Source Inspector</span>
+        </div>
+        <button onclick="toggleRightPanel()" class="text-slate-400 hover:text-white p-1 rounded transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div id="source-inspector-content" class="flex-1 overflow-y-auto p-4 space-y-4 text-xs custom-scrollbar">
+        
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Dokumen Terpilih</span>
+          <div id="inspector-doc-title" class="font-bold text-blue-400 mt-1">Akta Pengangkutan Jalan 1987 (Akta 333)</div>
+          <div id="inspector-doc-version" class="text-[10px] text-slate-400 mt-0.5">Versi Warta AGC / Kemaskini 2026</div>
+        </div>
+
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Petikan Sumber Asal</span>
+          <div id="inspector-quote" class="mt-1 bg-slate-950 p-3 rounded border border-slate-800 font-mono text-[11px] text-slate-300 leading-relaxed italic">
+            "Sila klik mana-mana chip rujukan [Source Chip] dalam jawapan AI atau kad seksyen untuk memeriksa perenggan asal di sini."
+          </div>
+        </div>
+
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Meta Semakan</span>
+          <div class="mt-1 space-y-1.5 text-[11px] font-mono text-slate-400">
+            <div class="flex justify-between"><span>Halaman:</span> <span id="inspector-page" class="text-white">m/s 42</span></div>
+            <div class="flex justify-between"><span>Seksyen:</span> <span id="inspector-section" class="text-amber-400">s.52(1)</span></div>
+            <div class="flex justify-between"><span>Status Kuatkuasa:</span> <span class="text-emerald-400">Berkuatkuasa</span></div>
+          </div>
+        </div>
+
+        <div class="p-3 bg-amber-950/30 border border-amber-800/40 rounded-lg text-amber-200 text-[11px] leading-relaxed">
+          <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+          Jika status tarikh/versi tidak dapat disahkan, pegawai digalakkan menyemak teks warta terkini di AGC Portal.
+        </div>
+
+      </div>
+
+      <!-- Drawer Footer -->
+      <div class="p-3 border-t border-slate-800 bg-slate-950 text-center text-[10px] text-slate-500">
+        Source Verification Engine v1.0
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex justify-around items-center h-14 z-30 px-1">
+    <button onclick="switchView('dashboard')" class="flex flex-col items-center justify-center text-slate-400 hover:text-white w-full h-full">
+      <i class="fa-solid fa-chart-line text-sm"></i>
+      <span class="text-[9px] mt-1 font-medium">Dashboard</span>
+    </button>
+    <button onclick="switchView('assistant')" class="flex flex-col items-center justify-center text-slate-400 hover:text-white w-full h-full">
+      <i class="fa-solid fa-robot text-sm text-emerald-400"></i>
+      <span class="text-[9px] mt-1 font-medium">AI Chat</span>
+    </button>
+    <button onclick="switchView('akta')" class="flex flex-col items-center justify-center text-slate-400 hover:text-white w-full h-full">
+      <i class="fa-solid fa-book-bookmark text-sm text-amber-400"></i>
+      <span class="text-[9px] mt-1 font-medium">Akta 333</span>
+    </button>
+    <button onclick="switchView('checklist')" class="flex flex-col items-center justify-center text-slate-400 hover:text-white w-full h-full">
+      <i class="fa-solid fa-list-check text-sm text-cyan-400"></i>
+      <span class="text-[9px] mt-1 font-medium">Checklist</span>
+    </button>
+    <button onclick="openMobileSidebar()" class="flex flex-col items-center justify-center text-slate-400 hover:text-white w-full h-full">
+      <i class="fa-solid fa-bars text-sm"></i>
+      <span class="text-[9px] mt-1 font-medium">Menu</span>
+    </button>
+  </nav>
+
+  <script>
+    const state = {
+      currentView: 'dashboard',
+      chatHistory: [],
+      queryHistory: [],
+      customApiKey: ''
+    };
+
+    const lawDatabase = [
+      {
+        id: 'A333-S26-1',
+        act: 'Akta Pengangkutan Jalan 1987 (Akta 333)',
+        section: 'Seksyen 26(1)',
+        category: 'AKTA333',
+        title: 'Memandu Tanpa Lesen Memandu Sah',
+        quote: 'Tiada seorang pun boleh memandu sesuatu kenderaan motor di sesuatu jalan melainkan jika dia memegang lesen memandu yang dikeluarkan di bawah Bahagian ini.',
+        explanation: 'Seseorang dilarang sama sekali memandu kenderaan motor di jalan awam tanpa mempunyai Lesen Memandu (CDL/L/P) yang sah dan berkuat kuasa.',
+        elements: [
+          'Memandu kenderaan motor di jalan awam.',
+          'Gagal mengemukakan atau tidak mempunyai Lesen Memandu yang sah bagi kelas kenderaan tersebut.'
+        ],
+        evidence: [
+          'Semakan sistem mySIKAP / Database JPJ',
+          'Notis Pol 257 yang dikeluarkan di lokasi',
+          'Kenyataan pengakuan pemandu'
+        ],
+        page: 'm/s 44 (Section 26)'
+      },
+      {
+        id: 'A333-S23-1',
+        act: 'Akta Pengangkutan Jalan 1987 (Akta 333)',
+        section: 'Seksyen 23(1)',
+        category: 'AKTA333',
+        title: 'Memandu Tanpa Lesen Kenderaan Motor (LKM)',
+        quote: 'Tiada seorang pun boleh memiliki atau memandu sesuatu kenderaan motor yang baginya lesen kenderaan motor tidak berkuat kuasa.',
+        explanation: 'Kenderaan tidak boleh dipandu di jalan raya sekiranya Cukai Jalan / LKM telah tamat tempoh dan tidak diperbaharui.',
+        elements: [
+          'Kenderaan dipandu di jalan awam.',
+          'Status LKM tamat tempoh semasa pemeriksaan.'
+        ],
+        evidence: [
+          'Semakan fizikal pelekat LKM / Sijil Digital',
+          'Semakan rekod mySIKAP',
+          'Gambar kenderaan di lokasi'
+        ],
+        page: 'm/s 41 (Section 23)'
+      },
+      {
+        id: 'A333-S41-1',
+        act: 'Akta Pengangkutan Jalan 1987 (Akta 333)',
+        section: 'Seksyen 41(1)',
+        category: 'AKTA333',
+        title: 'Menyebabkan Kematian Kerana Memandu Melulu / Membahayakan',
+        quote: 'Mana-mana orang yang memandu sesuatu kenderaan motor di jalan secara melulu atau dengan kelajuan atau dengan cara yang membahayakan awam, menyebabkan kematian mana-mana orang...',
+        explanation: 'Kesalahan berat memandu secara melulu atau berbahaya sehingga menyebabkan kematian mangsa. Menanggung hukuman penjara dan denda mandatory.',
+        elements: [
+          'Memandu kenderaan motor di jalan awam.',
+          'Gaya pemanduan melulu / membahayakan orang awam.',
+          'Pemanduan tersebut menjadi punca utama kematian mangsa.'
+        ],
+        evidence: [
+          'Laporan Siasatan Kemalangan (Laporan Polis & Skets Plan)',
+          'Laporan Bedah Siasat Hospital / Post-Mortem',
+          'Laporan Analisis Puspakom & Rakaman DASHCAM / CCTV'
+        ],
+        page: 'm/s 62 (Section 41)'
+      },
+      {
+        id: 'A333-S42-1',
+        act: 'Akta Pengangkutan Jalan 1987 (Akta 333)',
+        section: 'Seksyen 42(1)',
+        category: 'AKTA333',
+        title: 'Memandu Secara Melulu Dan Membahayakan',
+        quote: 'Mana-mana orang yang memandu sesuatu kenderaan motor di jalan secara melulu atau dengan kelajuan atau dengan cara yang membahayakan awam...',
+        explanation: 'Memandu dengan cara yang menimbulkan risiko bahaya nyata kepada pengguna jalan raya yang lain (contoh: lumba haram, zig-zag merbahaya).',
+        elements: [
+          'Memandu di jalan awam.',
+          'Cara pemanduan melulu melepasi had keselamatan biasa.'
+        ],
+        evidence: [
+          'Rakaman video kecurangan/pemanduan',
+          'Kenyataan saksi polis/anggota penguatkuasa',
+          'Borang tangkapan di lokasi'
+        ],
+        page: 'm/s 63 (Section 42)'
+      },
+      {
+        id: 'A333-S45A-1',
+        act: 'Akta Pengangkutan Jalan 1987 (Akta 333)',
+        section: 'Seksyen 45A(1)',
+        category: 'AKTA333',
+        title: 'Memandu Dengan Kepekatan Alkohol Melebihi Had Ditetapkan',
+        quote: 'Mana-mana orang yang apabila memandu atau cuba memandu... mempunyai kepekatan alkohol dalam nafas, darah atau air kencing yang melebihi had yang ditetapkan...',
+        explanation: 'Memandu apabila paras alkohol dalam badan melepasi had diwartakan (35 microgram per 100ml nafas / 80mg per 100ml darah).',
+        elements: [
+          'Pemandu memandu atau cuba memandu kenderaan.',
+          'Ujian pernafasan / sampel darah mengesahkan paras alkohol melebihi had.'
+        ],
+        evidence: [
+          'Printout alat ujian Evidential Breath Analyzer (EBA)',
+          'Laporan Kimia (Jabatan Kimia Malaysia)',
+          'Borang Ujian Saringan Awal'
+        ],
+        page: 'm/s 68 (Section 45A)'
+      },
+      {
+        id: 'A333-S52-1',
+        act: 'Akta Pengangkutan Jalan 1987 (Akta 333)',
+        section: 'Seksyen 52(1)',
+        category: 'AKTA333',
+        title: 'Kewajipan Menghentikan Kenderaan',
+        quote: 'Apabila seorang pegawai polis atau pegawai pengangkutan jalan dalam pakaian seragam sedang bertugas... seseorang yang memandu hendaklah menghentikan kenderaan.',
+        explanation: 'Pemandu wajib menghentikan kenderaan serta-merta apabila diisyaratkan oleh Pegawai JPJ berseragam bertugas.',
+        elements: [
+          'Pegawai JPJ berpakaian seragam rasmi sedang bertugas.',
+          'Isyarat menghentikan kenderaan diberikan secara jelas.',
+          'Pemandu gagal menghentikan kenderaan.'
+        ],
+        evidence: [
+          'Rakaman video/gambar arahan diberikan',
+          'Laporan bertulis Pegawai Penguatkuasa',
+          'Nombor pendaftaran kenderaan & perincian lokasi'
+        ],
+        page: 'm/s 79 (Section 52)'
+      },
+      {
+        id: 'A333-S64-1',
+        act: 'Akta Pengangkutan Jalan 1987 (Akta 333)',
+        section: 'Seksyen 64(1)',
+        category: 'AKTA333',
+        title: 'Kuasa Menyita Kenderaan',
+        quote: 'Mana-mana pegawai polis atau pegawai pengangkutan jalan boleh menyita mana-mana kenderaan motor jika berpuas hati bahawa kesalahan telah dilakukan...',
+        explanation: 'Pegawai berkuasa menyita kenderaan bagi maksud mengenal pasti pemandu/pemilik atau memastikan kesalahan tidak berulang.',
+        elements: [
+          'Kesalahan di bawah Akta 333 dikesan.',
+          'Justifikasi meyakinkan untuk penyitaan (tiada LKM/pemandu tiada lesen/ubah suai ekstrim).'
+        ],
+        evidence: [
+          'Notis Sita Kenderaan (Seksyen 64)',
+          'Gambar kenderaan di lokasi',
+          'Borang Pemeriksaan Sitaan'
+        ],
+        page: 'm/s 94 (Section 64)'
+      },
+      {
+        id: 'A715-S19-1',
+        act: 'Akta Pengangkutan Awam Darat 2010 (Akta 715)',
+        section: 'Seksyen 19(1)',
+        category: 'AKTA715',
+        title: 'Langgar Syarat Lesen Pengendali (Overloading)',
+        quote: 'Pemegang lesen pengendali hendaklah mematuhi semua syarat yang dikembarkan bersama Lesen Pengendali perkhidmatan barangan.',
+        explanation: 'Syarikat pengendali lori wajib memastikan had muatan (BDM/BGK) dipatuhi mengikut kelulusan lesen.',
+        elements: [
+          'Entiti adalah Pemegang Lesen Pengendali APAD.',
+          'Muatan melepasi had berat dibenarkan (BDM) berdasarkan resit timbangan sah.'
+        ],
+        evidence: [
+          'Slip Timbangan Stesen Timbang JPJ / Timbang Mudah Alih',
+          'Salinan Lesen Pengendali & Sijil Pendaftaran Kenderaan',
+          'Nota Konsainmen / Invois Muatan'
+        ],
+        page: 'm/s 142 (Act 715)'
+      }
+    ];
+
+    window.onload = function() {
+      renderActCards();
+      renderChecklist();
+      renderHistoryList();
+      console.log("JPJ Enforcement AI Assistant V1 (Mobile + Desktop Responsive) ready.");
+    };
+
+    function switchView(viewId) {
+      state.currentView = viewId;
+      
+      document.querySelectorAll('.view-panel').forEach(panel => {
+        panel.classList.add('hidden');
+      });
+
+      const targetPanel = document.getElementById(`view-${viewId}`);
+      if (targetPanel) {
+        targetPanel.classList.remove('hidden');
+      }
+
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.remove('bg-slate-800', 'text-white');
+        btn.classList.add('text-slate-300');
+      });
+
+      const activeNav = document.getElementById(`nav-${viewId}`);
+      if (activeNav) {
+        activeNav.classList.add('bg-slate-800', 'text-white');
+      }
+
+      // Automatically close mobile menu drawer on navigate
+      closeMobileSidebar();
+      
+      // Scroll content to top
+      document.querySelector('main').scrollTop = 0;
+    }
+
+    /* Mobile Sidebar Handlers */
+    function openMobileSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+      sidebar.classList.remove('-translate-x-full');
+      overlay.classList.remove('hidden');
+    }
+
+    function closeMobileSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+      if (sidebar) sidebar.classList.add('-translate-x-full');
+      if (overlay) overlay.classList.add('hidden');
+    }
+
+    function toggleDesktopSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('md:w-64');
+      sidebar.classList.toggle('md:w-16');
+      
+      document.querySelectorAll('.sidebar-text').forEach(el => {
+        el.classList.toggle('hidden');
+      });
+    }
+
+    function toggleRightPanel() {
+      const panel = document.getElementById('right-panel');
+      panel.classList.toggle('hidden');
+      panel.classList.toggle('translate-x-full');
+    }
+
+    function inspectSource(lawId) {
+      const item = lawDatabase.find(l => l.id === lawId || l.section.includes(lawId));
+      if (!item) return;
+
+      document.getElementById('inspector-doc-title').innerText = item.act;
+      document.getElementById('inspector-doc-version').innerText = "Warta AGC / Status Aktif 2026";
+      document.getElementById('inspector-quote').innerText = `"${item.quote}"`;
+      document.getElementById('inspector-page').innerText = item.page;
+      document.getElementById('inspector-section').innerText = item.section;
+
+      const panel = document.getElementById('right-panel');
+      panel.classList.remove('hidden');
+      panel.classList.remove('translate-x-full');
+    }
+
+    function handleGlobalSearch(e) {
+      if (e.key === 'Enter') {
+        const query = e.target.value.trim();
+        if (!query) return;
+        switchView('assistant');
+        quickAsk(query);
+        e.target.value = '';
+      }
+    }
+
+    async function handleChatSubmit(e) {
+      e.preventDefault();
+      const inputEl = document.getElementById('chat-input');
+      const text = inputEl.value.trim();
+      if (!text) return;
+
+      appendUserMessage(text);
+      inputEl.value = '';
+
+      const typingId = appendTypingIndicator();
+
+      try {
+        const aiResponse = await fetchGeminiAIResponse(text);
+        removeTypingIndicator(typingId);
+        appendAIMessage(aiResponse);
+        logQueryHistory(text, aiResponse.confidence || 'TINGGI');
+      } catch (err) {
+        removeTypingIndicator(typingId);
+        const fallbackRes = generateLocalFallbackAIResponse(text);
+        appendAIMessage(fallbackRes);
+        logQueryHistory(text, fallbackRes.confidence || 'SEDERHANA');
+      }
+    }
+
+    function quickAsk(promptText) {
+      switchView('assistant');
+      document.getElementById('chat-input').value = promptText;
+      const fakeEvent = { preventDefault: () => {} };
+      handleChatSubmit(fakeEvent);
+    }
+
+    function appendUserMessage(text) {
+      const container = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = "flex gap-2.5 md:gap-3 justify-end";
+      div.innerHTML = `
+        <div class="bg-blue-600/90 border border-blue-500/30 text-white p-3 md:p-3.5 rounded-2xl rounded-tr-none max-w-[85%] sm:max-w-xl text-xs leading-relaxed shadow-md">
+          ${escapeHtml(text)}
+        </div>
+        <div class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
+          PG
+        </div>
+      `;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function appendTypingIndicator() {
+      const container = document.getElementById('chat-messages');
+      const id = 'typing-' + Date.now();
+      const div = document.createElement('div');
+      div.id = id;
+      div.className = "flex gap-2.5 md:gap-3";
+      div.innerHTML = `
+        <div class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-700 flex items-center justify-center text-yellow-400 font-black text-xs shrink-0">
+          JPJ
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl rounded-tl-none text-xs text-slate-400 flex items-center gap-2">
+          <i class="fa-solid fa-spinner animate-spin text-blue-400"></i> Menyemak pangkalan data Akta 333 & SOP JPJ...
+        </div>
+      `;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+      return id;
+    }
+
+    function removeTypingIndicator(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    async function fetchGeminiAIResponse(userQuery) {
+      const apiKey = document.getElementById('custom-api-key').value.trim() || "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const systemPrompt = `Anda ialah JPJ Enforcement AI Assistant V1, iaitu pembantu AI rujukan rasmi untuk pegawai Jabatan Pengangkutan Jalan (JPJ) Malaysia.
+PRINSIP UTAMA: SUMBER DAHULU. JAWAPAN KEMUDIAN.
+Anda DILARANG mereka-reka nombor seksyen, hukuman atau maklumat yang tiada dalam pangkalan data. Jika maklumat tidak dapat disahkan, jawab: "Maklumat tidak dapat disahkan berdasarkan sumber yang tersedia."
+
+Gunakan Bahasa Melayu yang jelas dan professional. Sertakan nombor seksyen Akta 333 / Akta 715 yang sah.`;
+
+      const payload = {
+        contents: [{ parts: [{ text: userQuery }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] }
+      };
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error("API Fetch Error");
+
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error("Empty AI Response");
+
+      return {
+        rawFormatted: rawText,
+        confidence: rawText.includes('TINGGI') ? 'TINGGI' : 'SEDERHANA'
+      };
+    }
+
+    function generateLocalFallbackAIResponse(query) {
+      const match = lawDatabase.find(l => query.toLowerCase().includes(l.section.toLowerCase()) || query.toLowerCase().includes(l.title.toLowerCase()) || query.toLowerCase().includes(l.category.toLowerCase()));
+
+      if (match) {
+        return {
+          shortAnswer: `Berdasarkan ${match.act}, peruntukan ${match.section} menetapkan kesalahan berkenaan ${match.title}.`,
+          reference: { act: match.act, section: match.section, regulation: 'N/A', document: 'Pekeliling Operasi JPJ 2026' },
+          quote: match.quote,
+          explanation: match.explanation,
+          elements: match.elements,
+          evidence: match.evidence,
+          unverified: 'Status permit syarikat pemunya perlu disahihkan berasingan melalui rekod mySIKAP.',
+          source: { name: match.act, page: match.page, version: 'Versi Warta AGC 2026' },
+          confidence: 'TINGGI',
+          confidenceReason: 'Peruntukan teks seksyen dipetik terus daripada pangkalan data Akta rasmi.'
+        };
+      }
+
+      return {
+        shortAnswer: `Mengenai pertanyaan "${query}", perkara ini tertakluk di bawah peraturan lalulintas dan penguatkuasaan kenderaan motor JPJ (Akta 333 / Akta 715).`,
+        reference: { act: 'Akta Pengangkutan Jalan 1987 (Akta 333)', section: 'Semakan Am', regulation: 'Kaedah Lalu Lintas Jalan 1959', document: 'SOP Operasi JPJ' },
+        quote: 'Seseorang pemandu hendaklah mematuhi semua papan tanda dan arahan pegawai penguatkuasa yang bertugas.',
+        explanation: 'Setiap kesalahan penguatkuasaan memerlukan pengesahan elemen asas dan bukti kukuh sebelum tindakan notis dikeluarkan.',
+        elements: ['Pengesahan identiti pemandu/pemilik', 'Pengesahan fizikal kenderaan & nombor pendaftaran'],
+        evidence: ['Notis Pol 257', 'Rakaman gambar di lokasi kejadian'],
+        unverified: 'Nombor seksyen spesifik tidak dapat disahkan tanpa maklumat terperinci kategori kenderaan.',
+        source: { name: 'SOP & Manual Penguatkuasaan JPJ', page: 'Kemaskini AGC', version: '2026' },
+        confidence: 'SEDERHANA',
+        confidenceReason: 'Memerlukan dokumen sokongan tambahan untuk pengesahan seksyen muktamad.'
+      };
+    }
+
+    function appendAIMessage(data) {
+      const container = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = "flex gap-2.5 md:gap-3";
+
+      let contentHtml = '';
+
+      if (data.rawFormatted) {
+        contentHtml = `<div class="whitespace-pre-wrap leading-relaxed">${escapeHtml(data.rawFormatted)}</div>`;
+      } else {
+        const confClass = data.confidence === 'TINGGI' ? 'confidence-high' : 'confidence-med';
+
+        contentHtml = `
+          <div class="bg-slate-950 p-3 rounded-lg border-l-4 border-l-blue-500 mb-3">
+            <div class="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">1. Jawapan Ringkas</div>
+            <p class="text-slate-200">${escapeHtml(data.shortAnswer)}</p>
+          </div>
+
+          <div class="mb-3 space-y-1 font-mono text-[11px] bg-slate-950 p-2.5 rounded border border-slate-800">
+            <div><strong class="text-amber-400">Akta:</strong> ${escapeHtml(data.reference.act)}</div>
+            <div><strong class="text-amber-400">Seksyen:</strong> ${escapeHtml(data.reference.section)}</div>
+            <div><strong class="text-amber-400">Peraturan/SOP:</strong> ${escapeHtml(data.reference.regulation)}</div>
+          </div>
+
+          <div class="mb-3 space-y-1.5">
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Direct Quote & Penjelasan Bahasa Mudah</div>
+            <div class="bg-slate-950 p-3 rounded border border-slate-800 italic font-mono text-[11px] text-slate-300">
+              "${escapeHtml(data.quote)}"
+            </div>
+            <p class="text-slate-300"><strong class="text-white">Penjelasan:</strong> ${escapeHtml(data.explanation)}</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div class="bg-slate-950 p-3 rounded border border-slate-800">
+              <div class="text-[10px] font-bold text-purple-400 uppercase mb-1">Elemen Perlu Disemak</div>
+              <ul class="list-disc list-inside space-y-1 text-slate-300 text-[11px]">
+                ${data.elements.map(e => `<li>${escapeHtml(e)}</li>`).join('')}
+              </ul>
+            </div>
+            <div class="bg-slate-950 p-3 rounded border border-slate-800">
+              <div class="text-[10px] font-bold text-cyan-400 uppercase mb-1">Bukti / Dokumen Berkaitan</div>
+              <ul class="list-disc list-inside space-y-1 text-slate-300 text-[11px]">
+                ${data.evidence.map(e => `<li>${escapeHtml(e)}</li>`).join('')}
+              </ul>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-3">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button onclick="inspectSource('${escapeHtml(data.reference.section)}')" class="source-chip text-[10px] px-2 py-0.5 rounded flex items-center gap-1">
+                <i class="fa-solid fa-bookmark"></i> ${escapeHtml(data.reference.act)} — ${escapeHtml(data.reference.section)}
+              </button>
+            </div>
+            <span class="${confClass} text-[10px] font-mono font-bold px-2 py-0.5 rounded border">
+              KEYAKINAN: ${data.confidence}
+            </span>
+          </div>
+        `;
+      }
+
+      div.innerHTML = `
+        <div class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-700 flex items-center justify-center text-yellow-400 font-black text-xs shrink-0 mt-1">
+          JPJ
+        </div>
+        <div class="flex-1 bg-slate-900 border border-slate-800 p-3.5 md:p-4 rounded-2xl rounded-tl-none max-w-3xl text-xs space-y-2">
+          ${contentHtml}
+        </div>
+      `;
+
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearChat() {
+      document.getElementById('chat-messages').innerHTML = `
+        <div class="flex gap-2.5 md:gap-3">
+          <div class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-700 flex items-center justify-center text-yellow-400 font-black text-xs shrink-0 mt-1">JPJ</div>
+          <div class="flex-1 bg-slate-900 border border-slate-800 p-3.5 md:p-4 rounded-2xl rounded-tl-none max-w-3xl space-y-2 text-xs">
+            <div class="font-bold text-blue-400">Sesi AI Baru Dimulakan</div>
+            <p class="text-slate-300">Sila masukkan pertanyaan undang-undang atau rujukan kes baharu.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderActCards() {
+      const grid = document.getElementById('act-cards-grid');
+      grid.innerHTML = lawDatabase.map(item => `
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 hover:border-amber-500/50 transition flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex justify-between items-start">
+              <span class="source-chip text-[10px] px-2 py-0.5 rounded font-mono font-bold">${escapeHtml(item.section)}</span>
+              <span class="text-[10px] text-slate-500 font-mono">${escapeHtml(item.page)}</span>
+            </div>
+            <h4 class="font-bold text-sm text-white mt-2">${escapeHtml(item.title)}</h4>
+            <div class="text-[11px] text-slate-400 mt-1 line-clamp-2">${escapeHtml(item.act)}</div>
+            <p class="text-xs text-slate-300 mt-2 bg-slate-950 p-2.5 rounded border border-slate-800 font-mono text-[11px] leading-relaxed">
+              "${escapeHtml(item.quote)}"
+            </p>
+          </div>
+          <button onclick="inspectSource('${item.id}')" class="w-full text-center bg-slate-800 hover:bg-slate-700 text-blue-300 py-2 rounded text-xs transition touch-btn">
+            <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Periksa Detail Peruntukan
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function filterActs() {
+      const q = document.getElementById('act-filter-input').value.toLowerCase();
+      const cat = document.getElementById('act-category-select').value;
+
+      const filtered = lawDatabase.filter(item => {
+        const matchesQ = item.title.toLowerCase().includes(q) || item.section.toLowerCase().includes(q) || item.act.toLowerCase().includes(q);
+        const matchesCat = (cat === 'ALL') || (item.category === cat);
+        return matchesQ && matchesCat;
+      });
+
+      const grid = document.getElementById('act-cards-grid');
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500 font-mono text-xs">Tiada seksyen dijumpai bagi kriteria carian.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(item => `
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 hover:border-amber-500/50 transition flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex justify-between items-start">
+              <span class="source-chip text-[10px] px-2 py-0.5 rounded font-mono font-bold">${escapeHtml(item.section)}</span>
+              <span class="text-[10px] text-slate-500 font-mono">${escapeHtml(item.page)}</span>
+            </div>
+            <h4 class="font-bold text-sm text-white mt-2">${escapeHtml(item.title)}</h4>
+            <div class="text-[11px] text-slate-400 mt-1 line-clamp-2">${escapeHtml(item.act)}</div>
+            <p class="text-xs text-slate-300 mt-2 bg-slate-950 p-2.5 rounded border border-slate-800 font-mono text-[11px] leading-relaxed">
+              "${escapeHtml(item.quote)}"
+            </p>
+          </div>
+          <button onclick="inspectSource('${item.id}')" class="w-full text-center bg-slate-800 hover:bg-slate-700 text-blue-300 py-2 rounded text-xs transition touch-btn">
+            <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Periksa Detail Peruntukan
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function runCaseAnalysis() {
+      const ref = document.getElementById('case-ref').value;
+      const vType = document.getElementById('case-v-type').value;
+      const dStatus = document.getElementById('case-d-status').value;
+      const rawFacts = document.getElementById('case-facts-input').value.trim();
+
+      const outputEl = document.getElementById('case-analysis-output');
+
+      if (!rawFacts) {
+        outputEl.innerHTML = `<div class="p-4 bg-red-950/50 border border-red-800 text-red-300 text-xs rounded">Sila masukkan fakta kes sebelum menjalankan analisis.</div>`;
+        return;
+      }
+
+      outputEl.innerHTML = `
+        <div class="space-y-4 text-xs">
+          <div class="bg-slate-950 p-3 rounded border border-slate-800">
+            <h4 class="font-bold text-blue-400 mb-1">1. Ringkasan Fakta Kes</h4>
+            <p class="text-slate-300">${escapeHtml(rawFacts)}</p>
+          </div>
+
+          <div class="bg-slate-950 p-3 rounded border border-slate-800">
+            <h4 class="font-bold text-amber-400 mb-1">2. Fakta Belum Disahkan</h4>
+            <ul class="list-disc list-inside text-slate-400 space-y-1">
+              <li>Status Lesen Kenderaan Motor (LKM) dan Lesen Memandu dalam sistem mySIKAP.</li>
+              <li>Salinan dokumen fizikal dan pengesahan identiti pemandu/pemilik.</li>
+            </ul>
+          </div>
+
+          <div class="bg-slate-950 p-3 rounded border border-slate-800">
+            <h4 class="font-bold text-purple-400 mb-1">3. Isu Undang-Undang Utama</h4>
+            <p class="text-slate-300">Kesalahan di bawah Akta 333 berasaskan [${escapeHtml(dStatus)}] dan pengoperasian jenis kenderaan [${escapeHtml(vType)}].</p>
+          </div>
+
+          <div class="bg-slate-950 p-3 rounded border border-slate-800">
+            <h4 class="font-bold text-cyan-400 mb-1">4. Cadangan Seksyen Berkaitan</h4>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left font-mono text-[11px] mt-2">
+                <thead class="bg-slate-900 text-slate-400">
+                  <tr><th class="p-2">Seksyen</th><th class="p-2">Perkara</th><th class="p-2">Status</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                  <tr><td class="p-2 text-amber-400">Seksyen 26(1) APJ</td><td class="p-2">Memandu tanpa lesen memandu sah</td><td class="p-2 text-emerald-400">Perlu Disahkan</td></tr>
+                  <tr><td class="p-2 text-amber-400">Seksyen 23(1) APJ</td><td class="p-2">LKM Tamat Tempoh</td><td class="p-2 text-emerald-400">Perlu Disahkan</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderChecklist() {
+      const container = document.getElementById('checklist-container');
+      const categories = [
+        { code: 'A', title: 'Pengadu', items: ['Identiti Pengadu / Pegawai Penguatkuasa', 'Butiran Aduan / Laporan Tangkapan', 'Tarikh, Masa & Lokasi Kejadian'] },
+        { code: 'B', title: 'Orang Yang Disiasat', items: ['Pengesahan Kad Pengenalan / Pasport', 'Status Lesen Memandu (Kelas & Salinan)', 'Kenyataan Awal / Pengakuan'] },
+        { code: 'C', title: 'Kenderaan', items: ['Nombor Pendaftaran Kenderaan', 'Status LKM & Insurans', 'Jenis Kenderaan & BDM / BGK'] },
+        { code: 'D', title: 'Dokumen', items: ['Lesen Memandu (CDL/GDL/PSV)', 'Lesen Kenderaan Motor (LKM)', 'Permit Pengendali APAD (Jika Berkenaan)'] },
+        { code: 'E', title: 'Bukti Fizikal', items: ['Gambar Kenderaan di Lokasi (4 Sudut)', 'Gambar Pelekat LKM / Plat Fancy', 'Barang Sitaan (Notis Sita 64(1))'] },
+        { code: 'F', title: 'Bukti Digital', items: ['Rakaman CCTV / Body Worn Camera (BWC)', 'Rekod Semakan mySIKAP System', 'Metadata Gambar & Video'] },
+        { code: 'G', title: 'Saksi', items: ['Identiti Saksi Bebas / Anggota Rakan Ops', 'Kenyataan Saksi Kejadian', 'Kebolehpercayaan Saksi'] },
+        { code: 'H', title: 'Kronologi Kejadian', items: ['Susunan: Tarikh → Masa → Lokasi → Peristiwa', 'Tindakan Arahan Berhenti Diberikan', 'Respon Pemandu / Kenderaan'] },
+        { code: 'I', title: 'Semakan Sistem', items: ['Semakan Sistem mySIKAP JPJ', 'Semakan Rekod Saman Tertunggak', 'Semakan Senarai Hitam (Blacklist)'] },
+        { code: 'J', title: 'Tindakan Susulan', items: ['Penyediaan Draf Kertas Siasatan (IP)', 'Rujukan Kepada Pegawai Pendakwaan', 'Penyerahan Notis Pol 257 / Seksyen 114'] }
+      ];
+
+      container.innerHTML = categories.map(cat => `
+        <div class="glass-panel p-4 rounded-xl border border-slate-800 space-y-2">
+          <div class="font-bold text-xs text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800 pb-2">
+            <span>Kategori ${cat.code}: ${cat.title}</span>
+            <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">Modul ${cat.code}</span>
+          </div>
+          <div class="space-y-2 pt-1">
+            ${cat.items.map((item, idx) => `
+              <label class="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer hover:text-white transition p-1">
+                <input type="checkbox" class="accent-cyan-500 rounded w-4 h-4">
+                <span>${escapeHtml(item)}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function printChecklist() {
+      window.print();
+    }
+
+    function copyChecklistText() {
+      const text = "CHECKLIST SIASATAN PENGUATKUASAAN JPJ (MODUL A-J)\nSistem Rujukan AI Assistant V1";
+      copyToClipboard(text);
+      alert("Teks checklist berjaya disalin ke clipboard.");
+    }
+
+    function analyzeDocument() {
+      const docType = document.getElementById('doc-type-select').value;
+      const text = document.getElementById('doc-text-input').value.trim();
+
+      const resultEl = document.getElementById('doc-analysis-result');
+
+      if (!text) {
+        resultEl.innerHTML = `<div class="p-3 bg-red-950 text-red-300 rounded text-xs">Sila masukkan teks dokumen terlebih dahulu.</div>`;
+        return;
+      }
+
+      resultEl.innerHTML = `
+        <div class="space-y-3 font-mono text-xs">
+          <div class="bg-slate-950 p-3 rounded border border-slate-800">
+            <span class="text-slate-400 block text-[10px]">JENIS DOKUMEN:</span>
+            <strong class="text-rose-400">${escapeHtml(docType)}</strong>
+          </div>
+
+          <div class="bg-slate-950 p-3 rounded border border-slate-800 space-y-1">
+            <span class="text-slate-400 block text-[10px]">SEMAKAN KESELARASAN:</span>
+            <div class="text-emerald-400"><i class="fa-solid fa-check mr-1"></i> Format nombor rujukan notis mematuhi piawaian.</div>
+            <div class="text-amber-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Sila pastikan tarikh serahan notis tidak melebihi tempoh statutori.</div>
+          </div>
+
+          <div class="bg-slate-950 p-3 rounded border border-slate-800">
+            <span class="text-slate-400 block text-[10px]">SEKSYEN DIKENAL PASTI:</span>
+            <span class="source-chip px-2 py-0.5 rounded text-[10px] font-bold">Seksyen 52(1) APJ 1987</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function logQueryHistory(query, confidence) {
+      state.queryHistory.unshift({
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        query,
+        confidence
+      });
+      renderHistoryList();
+    }
+
+    function renderHistoryList() {
+      const el = document.getElementById('history-list');
+      if (state.queryHistory.length === 0) {
+        el.innerHTML = `<div class="text-center text-slate-500 py-6">Tiada rekod carian terkini.</div>`;
+        return;
+      }
+
+      el.innerHTML = state.queryHistory.map(item => `
+        <div class="p-3 bg-slate-950 rounded border border-slate-800 flex justify-between items-center gap-2">
+          <div class="overflow-hidden">
+            <div class="text-white font-bold truncate">${escapeHtml(item.query)}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Masa: ${item.time}</div>
+          </div>
+          <span class="confidence-high px-2 py-0.5 rounded text-[10px] font-bold border shrink-0">${item.confidence}</span>
+        </div>
+      `).join('');
+    }
+
+    function clearHistoryLogs() {
+      state.queryHistory = [];
+      renderHistoryList();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function copyToClipboard(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+  </script>
+</body>
+</html>
